@@ -1,0 +1,22 @@
+# credenciais
+.env
+.env.*
+!.env.example
+
+# dados baixados: CVM, B3 e Fintz ficam so na maquina de quem roda
+fatores-b3/dados/
+fatores-b3/carteira/ledger/
+fatores-b3/artifacts/
+sbfg3/data/raw/
+sbfg3/data/contabil.json
+sbfg3/data/indicadores.json
+sbfg3/data/mercado.json
+sbfg3/data/comparaveis.json
+sbfg3/data/resumo.json
+sbfg3/*.xlsx
+
+# ambiente
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

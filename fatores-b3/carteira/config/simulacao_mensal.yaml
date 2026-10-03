@@ -1,0 +1,12 @@
+# Mandato operacional fictício autorizado em 2026-09-28.
+# Mantém modelos.yaml como benchmark histórico congelado de 21 pregões.
+id: TRIO_ROIC_MENSAL_DIA5_V1
+modelo_fatores: TRIO_ROIC
+inicio_mandato: '2026-09-28'
+dia_decisao: 5
+se_nao_houver_pregao: proximo_pregao_b3_observado
+execucao: fechamento_pregao_seguinte_observado
+aporte_ficticio_brl: 10000.00
+moeda: BRL
+uso: laboratorio_simulado
+publicacao_automatica: false

@@ -1,0 +1,33 @@
+{
+  "_leia": "Premissas de valuation de SBFG3. Cada uma e decisao do analista, nao dado. As que estao em null bloqueiam o DCF de proposito: preencher sem base e pior que deixar vazio. O reverse DCF nao depende de nenhuma delas e roda mesmo com tudo em null.",
+  "_como_preencher": "Troque null por numero e registre a fonte no campo _fonte correspondente. Rode 'python sbfg3/valuation.py' e o valuation.json e refeito.",
+
+  "preco_por_acao": 10.59,
+  "_fonte_preco": "ultimo pregao da serie Fintz, 03/06/2026. O site de RI exibia R$ 8,93 em 02/09/2026; trocar exige refazer mercado e multiplos (analise.json) no mesmo corte.",
+
+  "aliquota_normalizada": null,
+  "_fonte_aliquota": "PENDENTE. A efetiva do LTM 2T26 e -13,6% (beneficio liquido) e nao se projeta. Intervalo defensavel: 0 a 0,34. Resolver na nota de imposto de renda do ITR 2T26 — natureza e prazo do beneficio.",
+
+  "wacc": null,
+  "_fonte_wacc": "PENDENTE. Beta 1,77 contra IBOV (analise.json, mercado). Registrar taxa livre de risco, premio de mercado, custo de divida e estrutura de capital usados.",
+
+  "crescimento_terminal": null,
+  "_fonte_crescimento_terminal": "PENDENTE. Nao pode exceder o crescimento nominal de longo prazo da economia.",
+
+  "anos_projecao": 5,
+
+  "crescimento_receita": null,
+  "_fonte_crescimento_receita": "PENDENTE. Lista com um valor por ano de projecao, ou um numero unico. Ancoras: SSS de +24% (Centauro) e +19% (Fisia) no 2T26, com area de vendas parada em +2,5%.",
+
+  "margem_ebit": null,
+  "_fonte_margem_ebit": "PENDENTE. Margem EBIT sobre receita. A do LTM 2T26 e 7,9%. Considerar a pressao de mix: Fisia ja e maior que Centauro e tem margem bruta de 41% contra 51%.",
+
+  "capex_sobre_receita": null,
+  "_fonte_capex": "PENDENTE. O capex do LTM 2T26 foi R$ 501,3 mi (6,0% da receita) e o do LTM 2T25 R$ 253,3 mi. So 10,2% foi loja nova: o resto e reforma e tecnologia, que nao termina sozinho.",
+
+  "variacao_capital_giro_sobre_receita": null,
+  "_fonte_capital_giro": "PENDENTE. O capital de giro consumiu R$ 899,2 mi no 1S26, 84% por reducao de passivo. Decidir se foi evento unico ou patamar novo — as duas hipoteses dao valores incompativeis.",
+
+  "convencao_arrendamento": "passivo_na_divida",
+  "_fonte_convencao": "Escolha entre 'passivo_na_divida' (o arrendamento de R$ 1.587 mi ja esta na divida liquida e o aluguel NAO sai do fluxo, porque o EBIT pos-IFRS 16 ja o exclui) e 'aluguel_no_fluxo' (tira o arrendamento da divida e subtrai os pagamentos do FCF). Nunca as duas."
+}

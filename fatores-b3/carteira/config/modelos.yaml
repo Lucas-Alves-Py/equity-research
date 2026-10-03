@@ -1,0 +1,142 @@
+# ==========================================================================
+# DEFINICAO CONGELADA DOS MODELOS DA CARTEIRA SISTEMATICA
+#
+# REGRA: este arquivo nao muda em funcao de desempenho recente.
+#
+# Medimos que trocar de modelo com base nos ultimos 24 meses rendeu 26,5% a.a.
+# contra 37,6% de congelar -- e pior que escolher um modelo no chute e segurar
+# (28,2%). Perseguir desempenho destroi valor.
+#
+# Qualquer alteracao aqui exige commit proprio, com data e justificativa
+# escrita ANTES de ver o resultado. O historico do git e a auditoria.
+# ==========================================================================
+
+carteira:
+  nome: "QuantHub Factor B3 — Carteira Sistemática"
+  tipo: carteira_modelo_sistematica
+  capital_referencia: 100000.00
+  indice_base: 100.00
+  moeda: BRL
+  inicio: null            # definido na primeira publicacao executavel
+  observacao: >
+    Carteira modelo sistematica. O historico forward usa execucao simulada,
+    sem corretagem, slippage ou impacto de mercado. Nao representa uma cota,
+    patrimonio administrado ou recomendacao de investimento.
+
+modelos:
+  - id: TRIO_ROIC
+    peso: 1.0
+    congelado_em: "2026-08-28"
+    revisado_em: "2026-08-29"   # 5 -> 10 ativos e liquidez 2,0 -> 0,5MM
+    descricao: >
+      Valor + Qualidade + Momentum. Os tres fatores tiveram premio medido e
+      positivo antes de serem combinados (etapa 3 da metodologia), e a
+      correlacao maxima entre eles e 0,56 -- abaixo do limite de 0,7.
+    indicadores:
+      EV_EBIT:            crescente      # valor: menor EV/EBIT primeiro
+      ROIC:               decrescente    # qualidade: maior ROIC primeiro
+      momento_12_meses:   decrescente    # momentum: maior retorno 12m primeiro
+    numero_ativos: 10
+    filtro_liquidez_mm: 0.5
+    balanceamento_dias: 21
+    corretagem: 0.0
+    impacto_mercado: 0.0
+
+    evidencia:
+      premio_EV_EBIT:      "481,6% acumulado, escadinha OK, 66,4% dos meses"
+      premio_ROIC:         "729,6% acumulado, escadinha falha no meio, 62,5% dos meses"
+      premio_MOMENTO_12M:  "1429,8% acumulado, escadinha OK, 70,4% dos meses"
+      correlacoes:         "EV_EBIT x MOMENTO 0,09 | EV_EBIT x ROIC 0,56 | ROIC x MOMENTO 0,42"
+      backtest_in_sample:  "28,0% a.a., vol 24,0%, Sharpe 0,77, DD -52,7% (2011-12 a 2025-11)"
+      universo_elegivel:   "125 tickers por data, media (era 103 com filtro de 2MM)"
+      atribuicao_leave1out: "Momento +7,7pp | EV/EBIT +2,5pp | ROIC -0,6pp"
+      atribuicao_selecao:   "quem traz a acao: EV/EBIT 37,9% | ROIC 34,3% | Momento 27,8%"
+      universo_no_periodo: "6,7% a.a., Sharpe -0,12 | CDI 9,5% a.a."
+
+    ressalvas:
+      - "Resultado de backtest e IN-SAMPLE. 9+ modelos foram testados na mesma amostra."
+      - "Drawdown historico de -52,7%. 1 em cada 4 janelas de 12 meses foi negativa."
+      - "Mediana das janelas de 12m e 20,4% -- bem abaixo da media de 45,8%."
+      - "Universo nao exclui bancos; ROIC e P/VP nao significam o mesmo para eles."
+
+# --------------------------------------------------------------------------
+# REGRA DE MORTE DO MODELO -- definida a frio, ANTES de qualquer drawdown
+# --------------------------------------------------------------------------
+# Escrita agora justamente para nao ser decidida no meio do panico.
+# Drawdown, sozinho, NAO e criterio: -59,3% ja ocorreu no historico e o modelo
+# se recuperou. O criterio e sobre o FATOR parar de pagar, nao sobre a carteira
+# cair.
+regra_de_revisao:
+  gatilho_1: >
+    Premio de risco de qualquer um dos tres fatores ficar negativo em janela
+    movel de 36 meses. Isso indica que o fator parou de pagar, nao que a
+    carteira teve azar.
+  gatilho_2: >
+    Correlacao entre dois dos fatores ultrapassar 0,7 em janela de 36 meses.
+    Deixariam de ser fontes independentes de retorno.
+  gatilho_3: >
+    24 meses consecutivos abaixo do universo. Nao abaixo do CDI nem do IBOV --
+    do UNIVERSO, que e o benchmark correto.
+  prioridade: >
+    A atribuicao por leave-one-out mostrou que os tres fatores NAO contribuem
+    igualmente. Com 10 ativos: Momento +7,7pp, EV/EBIT +2,5pp, ROIC -0,6pp.
+    Se o momentum morrer, o modelo perde quase um terco do retorno. Se o ROIC
+    morrer, o modelo GANHA retorno e perde protecao -- ele e apolice, nao motor.
+    Monitorar o momentum com prioridade e janela mais curta que os demais.
+  o_que_nao_e_gatilho:
+    - "Drawdown, de qualquer magnitude."
+    - "Desempenho ruim em 12 meses."
+    - "Outro modelo estar indo melhor."
+
+
+# --------------------------------------------------------------------------
+# HISTORICO DE MUDANCAS
+# O git e a auditoria; este bloco e a justificativa legivel.
+# --------------------------------------------------------------------------
+historico_de_mudancas:
+  - data: "2026-08-28"
+    mudanca: "congelamento inicial -- 5 ativos"
+    motivo: >
+      Tres fatores validados por premio de risco ANTES de combinar, com
+      correlacao maxima de 0,56. 5 ativos / 2MM superava 10 ativos / 1MM com
+      a mesma capacity.
+
+  - data: "2026-08-29"
+    mudanca: "numero_ativos 5 -> 10"
+    motivo: >
+      Decisao do gestor, por preferencia de risco. Medido ANTES de aplicar,
+      com a MESMA liquidez de 2MM para isolar o efeito de diversificacao:
+        5 ativos:  33,2% a.a. | vol 28,6% | Sharpe 0,83 | DD -59,3%
+        10 ativos: 24,8% a.a. | vol 24,3% | Sharpe 0,63 | DD -52,8%
+      Custa 8,4pp de retorno e 0,20 de Sharpe; compra 6,5pp de drawdown.
+      Efeito colateral medido, que nao era esperado: com 10 ativos o fator
+      valor passa a contribuir de fato (+2,5pp contra +1,9pp com 5) e o ROIC
+      passa a contribuir retorno NEGATIVO (-0,6pp), virando exclusivamente
+      apolice de seguro. O modelo fica menos dependente de um unico fator.
+  - data: "2026-08-29"
+    mudanca: "filtro_liquidez_mm 2,0 -> 0,5"
+    motivo: >
+      O filtro de 2MM existia para proteger CAPACITY. O gestor definiu que o uso
+      sera pequeno ou ficticio, entao essa restricao deixou de valer -- o botao
+      estava calibrado para uma premissa que nao se aplica mais.
+      Varredura com 10 ativos, 21 pregoes, para escolher onde parar:
+        2,00MM: 103 tickers | 24,8% a.a. | Sharpe 0,63
+        1,00MM: 114 tickers | 26,5% a.a. | Sharpe 0,70
+        0,50MM: 125 tickers | 28,0% a.a. | Sharpe 0,77   <-- adotado
+        0,25MM: 137 tickers | 27,8% a.a. | Sharpe 0,78
+        0,10MM: 152 tickers | 24,8% a.a. | Sharpe 0,66
+      A curva NAO e monotonica: em 0,10MM o resultado desaba. Abaixo de certo
+      volume o preco fica ralo e a propria medicao perde confiabilidade (mesmo
+      territorio do bug do GOLL54). 0,50MM fica 5x acima desse piso.
+      Nao adotamos 0,25MM: ganhar 0,01 de Sharpe ali seria ajuste a amostra.
+      RESSALVA: 13o teste na mesma amostra; os 3,2 p.p. de ganho estao DENTRO
+      da dispersao entre modelos (5,2 p.p.). A mudanca se justifica pela
+      restricao que caiu, nao pelo numero medido.
+      Capacity resultante: ~R$ 2,5MM para sair em 5 pregoes (era ~R$ 10MM).
+
+    nao_adotado: >
+      Existe uma versao filtrada do valor (EV_EBIT_LIMPO, exigindo EV>0 e
+      EBIT>0) que mediu MELHOR nesta configuracao: 25,7% a.a., Sharpe 0,67,
+      contribuicao do valor +3,4pp. Nao foi adotada porque e uma SEGUNDA
+      mudanca -- congelamento existe para uma alteracao por vez, documentada.
+      Fica registrada para decisao separada.

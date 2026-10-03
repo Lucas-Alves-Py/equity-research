@@ -1,0 +1,19 @@
+{
+  "id": "TRIO_ROIC_PIT_V2_2026-09-28",
+  "status": "tecnicamente_validada_para_treino",
+  "data_validacao": "2026-09-28",
+  "fonte_sinal": ["B3 COTAHIST", "B3 CompanyCall", "B3 ShareCapitalCall", "CVM ITR/DFP/FCA"],
+  "gabarito_historico_exclusivo": "Fintz",
+  "formulas": {
+    "ROIC": "NOPAT TTM com taxa efetiva / (patrimonio liquido + divida bruta)",
+    "EV_EBIT": "(acoes ON*preco ON + acoes PN*preco PN + divida bruta - caixa) / EBIT TTM",
+    "momento_12_meses": "retorno total 252 sessoes; desdobramentos e caixa B3; JCP liquido de 15%"
+  },
+  "reconciliacao_top_2026-09-25": {
+    "EV_EBIT": "10/10 pares historicos com erro ate 0,074%",
+    "EBIT": "9/10 pares disponiveis com erro ate 0,074%; UGPA3 sem linha historica",
+    "ROIC": "8/10 pares comparaveis com erro ate 1,73 ponto percentual; MLAS3 historico invalido e UGPA3 sem par",
+    "momentum": "7/10 pares ate 0,04 ponto percentual; SEER3, WIZC3 e UGPA3 diferem porque o painel Fintz local nao ajustou dividendos B3 aprovados"
+  },
+  "limite": "validacao metodologica para simulacao; nao atribui performance passada ao mandato mensal"
+}

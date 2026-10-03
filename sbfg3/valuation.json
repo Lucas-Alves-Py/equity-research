@@ -1,0 +1,456 @@
+{
+ "gerado_em": "2026-10-03",
+ "ancoras": {
+  "data_corte": "2026-06-30",
+  "receita": 8368809000.0,
+  "ebit": 658276000.0,
+  "capex_ltm": -501278000.0,
+  "arrendamento_pago_ltm": -360314000.0,
+  "capital_investido": 5974890000.0,
+  "divida_liquida": 2771348000.0,
+  "acoes": 230663994,
+  "arrendamento_passivo": 1587000000.0
+ },
+ "premissas": {
+  "preco_por_acao": 10.59,
+  "aliquota_normalizada": null,
+  "wacc": null,
+  "crescimento_terminal": null,
+  "anos_projecao": 5,
+  "crescimento_receita": null,
+  "margem_ebit": null,
+  "capex_sobre_receita": null,
+  "variacao_capital_giro_sobre_receita": null,
+  "convencao_arrendamento": "passivo_na_divida"
+ },
+ "premissas_pendentes": [
+  "aliquota_normalizada",
+  "capex_sobre_receita",
+  "crescimento_receita",
+  "crescimento_terminal",
+  "margem_ebit",
+  "variacao_capital_giro_sobre_receita",
+  "wacc"
+ ],
+ "reverse_dcf": {
+  "enterprise_value": 5214079696.46,
+  "preco_por_acao": 10.59,
+  "convencao": "passivo_na_divida",
+  "por_aliquota": [
+   {
+    "aliquota": 0.0,
+    "nopat": 658276000.0,
+    "roic_medido": 0.1101737437844044,
+    "wacc_implicito_sem_crescimento": 0.12624970048826142,
+    "grade": [
+     {
+      "wacc": 0.1,
+      "crescimento": 0.0,
+      "roic_implicito": 0.0,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.02,
+      "roic_implicito": 0.05459481862820051,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.04,
+      "roic_implicito": 0.0762265788722358,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.0,
+      "roic_implicito": 0.0,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.02,
+      "roic_implicito": 0.09619134553151863,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.04,
+      "roic_implicito": 0.10918963725640099,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.02,
+      "roic_implicito": 0.40401840288312013,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.04,
+      "roic_implicito": 0.19238269106303735,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.04,
+      "roic_implicito": 0.8080368057662384,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     }
+    ]
+   },
+   {
+    "aliquota": 0.15,
+    "nopat": 559534600.0,
+    "roic_medido": 0.09364768221674374,
+    "wacc_implicito_sem_crescimento": 0.1073122454150222,
+    "grade": [
+     {
+      "wacc": 0.1,
+      "crescimento": 0.0,
+      "roic_implicito": 0.0,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.02,
+      "roic_implicito": 0.07858178174980712,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.04,
+      "roic_implicito": 0.09072682513685922,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.02,
+      "roic_implicito": 0.29351379589793564,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.04,
+      "roic_implicito": 0.1571635634996141,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.04,
+      "roic_implicito": 0.5870275917958723,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     }
+    ]
+   },
+   {
+    "aliquota": 0.25,
+    "nopat": 493707000.0,
+    "roic_medido": 0.0826303078383033,
+    "wacc_implicito_sem_crescimento": 0.09468727536619606,
+    "grade": [
+     {
+      "wacc": 0.1,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.02,
+      "roic_implicito": 0.12893783633161318,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.04,
+      "roic_implicito": 0.10918963725640102,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.04,
+      "roic_implicito": 0.257875672663226,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     }
+    ]
+   },
+   {
+    "aliquota": 0.34,
+    "nopat": 434462159.99999994,
+    "roic_medido": 0.07271467089770689,
+    "wacc_implicito_sem_crescimento": 0.08332480232225252,
+    "grade": [
+     {
+      "wacc": 0.1,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.02,
+      "roic_implicito": 0.501231617678857,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.1,
+      "crescimento": 0.04,
+      "roic_implicito": 0.1428947627011755,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.12,
+      "crescimento": 0.04,
+      "roic_implicito": 1.0024632353577085,
+      "inviavel": false
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.14,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.16,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.0,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.02,
+      "roic_implicito": null,
+      "inviavel": true
+     },
+     {
+      "wacc": 0.18,
+      "crescimento": 0.04,
+      "roic_implicito": null,
+      "inviavel": true
+     }
+    ]
+   }
+  ]
+ },
+ "dcf": {
+  "bloqueado_por": [
+   "aliquota_normalizada",
+   "capex_sobre_receita",
+   "crescimento_receita",
+   "crescimento_terminal",
+   "margem_ebit",
+   "variacao_capital_giro_sobre_receita",
+   "wacc"
+  ]
+ },
+ "sensibilidade": {
+  "bloqueado_por": [
+   "aliquota_normalizada",
+   "capex_sobre_receita",
+   "crescimento_receita",
+   "crescimento_terminal",
+   "margem_ebit",
+   "variacao_capital_giro_sobre_receita",
+   "wacc"
+  ]
+ }
+}
