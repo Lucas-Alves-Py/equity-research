@@ -6,7 +6,9 @@
 # dados baixados: CVM, B3 e Fintz ficam so na maquina de quem roda
 fatores-b3/dados/
 fatores-b3/carteira/ledger/
-fatores-b3/artifacts/
+fatores-b3/artifacts/*
+# resultados publicados: so o que vem de dado publico; comparacoes com Fintz/Varos ficam fora
+!fatores-b3/artifacts/resultados/
 sbfg3/data/raw/
 sbfg3/data/contabil.json
 sbfg3/data/indicadores.json
