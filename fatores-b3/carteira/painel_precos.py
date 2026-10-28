@@ -13,7 +13,6 @@ import json
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -50,11 +49,16 @@ def _cotacoes_intervalo(inicio: pd.Timestamp, fim: pd.Timestamp) -> pd.DataFrame
 
 
 def _guardar_eventos(prefixo: str, captura: tuple, as_of: pd.Timestamp) -> str:
+    """Snapshot endereçado pelo conteúdo: o nome é o SHA-256 dos bytes gravados.
+
+    Só dados entram no arquivo. Com hora de captura e data da rodada dentro,
+    cada rodada diária gravava um arquivo novo por empresa (2.240 num dia de
+    testes); o instante da decisão já fica no relatório que cita o hash.
+    """
+    del as_of  # mantido na assinatura; a data pertence ao relatório da decisão
     registro, caixa, acoes = captura
     documento = {
         'fonte': 'B3 CompanyCall', 'prefixo': prefixo,
-        'capturado_em_utc': datetime.now(timezone.utc).isoformat(),
-        'as_of': as_of.date().isoformat(),
         'empresa': {k: registro.get(k) for k in ('issuingCompany', 'tradingName', 'codeCVM')},
         'caixa': json.loads(caixa.to_json(orient='records', date_format='iso', date_unit='s')),
         'acoes': json.loads(acoes.to_json(orient='records', date_format='iso', date_unit='s')),
@@ -74,6 +78,65 @@ def _guardar_eventos(prefixo: str, captura: tuple, as_of: pd.Timestamp) -> str:
         finally:
             temporario.unlink(missing_ok=True)
     return digest
+
+
+def encadear_trocas(bruto: pd.DataFrame, cnpj_de, minimo: int = 253):
+    """Emenda no ticker novo o histórico do código anterior da mesma empresa.
+
+    Troca de código (ELET3 -> AXIA3, EMBR3 -> EMBJ3, GUAR3 -> RIAA3) zerava o
+    histórico do momentum. Só emenda com mesmo CNPJ, mesma classe, pregões
+    consecutivos e preço sem salto; fusão com CNPJ novo (PETZ3 -> AUAU3) ou
+    troca com relação de conversão fica de fora. `cnpj_de(ticker)` devolve um
+    conjunto de CNPJs.
+    """
+    sessoes = sorted(bruto['data'].unique())
+    ultima = sessoes[-1]
+    posicao = {d: i for i, d in enumerate(sessoes)}
+    por = bruto.groupby('ticker')['data'].agg(['min', 'max', 'count'])
+    novos = por[por['max'].eq(ultima) & por['count'].lt(minimo) & por['min'].gt(sessoes[0])]
+    encerrados = por[por['max'].lt(ultima)]
+    fechamento = bruto.set_index(['ticker', 'data'])['fechamento']
+    trocas = []
+    for novo, n in novos.iterrows():
+        anterior = sessoes[posicao[n['min']] - 1]
+        candidatos = encerrados[encerrados['max'].eq(anterior) &
+                                (encerrados.index.str[4:] == novo[4:])]
+        for velho in candidatos.index:
+            salto = fechamento[(novo, n['min'])] / fechamento[(velho, anterior)]
+            if not 0.8 <= salto <= 1.25 or not (cnpj_de(velho) & cnpj_de(novo)):
+                continue
+            trocas.append({'novo': novo, 'anterior': velho,
+                           'ultimo_pregao_anterior': str(pd.Timestamp(anterior).date()),
+                           'primeiro_pregao_novo': str(n['min'].date())})
+            break
+    if trocas:
+        bruto = bruto.copy()
+        bruto['ticker'] = bruto['ticker'].replace({t['anterior']: t['novo'] for t in trocas})
+        # O código antigo pode vir depois do novo (ELET3 -> AXIA3); quem lê a
+        # janela com tail() precisa das linhas em ordem de data.
+        bruto = bruto.sort_values(['ticker', 'data']).reset_index(drop=True)
+    return bruto, trocas
+
+
+def _cnpj_por_ticker():
+    """CNPJ pelo histórico do FCA; para ticker ausente nele, pelo cadastro B3."""
+    cache, master = {}, []
+
+    def busca(ticker):
+        if ticker not in cache:
+            if not master:
+                from fontes import cvm
+                ano = dt.date.today().year
+                master.append(cvm.security_master(list(range(ano - 8, ano + 1))))
+            achados = set(master[0].loc[master[0]['ticker'].eq(ticker), 'cnpj'])
+            if not achados:
+                c = str((b3.empresa(ticker) or {}).get('cnpj') or '').strip()
+                c = c.zfill(14) if c.isdigit() else ''
+                if len(c) == 14:
+                    achados = {f'{c[:2]}.{c[2:5]}.{c[5:8]}/{c[8:12]}-{c[12:]}'}
+            cache[ticker] = achados
+        return cache[ticker]
+    return busca
 
 
 def _validar_cotacoes(cotacoes: pd.DataFrame, as_of: pd.Timestamp) -> pd.DataFrame:
@@ -114,7 +177,8 @@ def painel_precos(as_of: str | dt.date | pd.Timestamp,
                   buscar_eventos: bool = True,
                   max_workers: int = 4,
                   eventos_por_emissor: dict | None = None,
-                  guardar_snapshots: bool = True) -> pd.DataFrame:
+                  guardar_snapshots: bool = True,
+                  cnpj_de=None) -> pd.DataFrame:
     """Um registro por ticker no último pregão COTAHIST até `as_of`.
 
     `volume` é a mediana das últimas 21 sessões negociadas do ticker.
@@ -125,6 +189,7 @@ def painel_precos(as_of: str | dt.date | pd.Timestamp,
     """
     corte = pd.Timestamp(as_of).normalize()
     bruto = _validar_cotacoes(_cotacoes(corte) if cotacoes is None else cotacoes, corte)
+    bruto, trocas = encadear_trocas(bruto, cnpj_de or _cnpj_por_ticker())
     data = bruto['data'].max()
     atual = bruto[bruto['data'].eq(data)].copy()
     if tickers is not None:
@@ -154,6 +219,7 @@ def painel_precos(as_of: str | dt.date | pd.Timestamp,
     if not buscar_eventos or not elegiveis:
         resultado = painel[COLUNAS].sort_values('ticker').reset_index(drop=True)
         resultado.attrs['eventos_sha256_por_emissor'] = {}
+        resultado.attrs['trocas_ticker'] = trocas
         return resultado
 
     prefixos = sorted({ticker[:4] for ticker in elegiveis})
@@ -220,6 +286,7 @@ def painel_precos(as_of: str | dt.date | pd.Timestamp,
             painel.at[indice, 'erro_eventos'] = str(exc)[:200]
     resultado = painel[COLUNAS].sort_values('ticker').reset_index(drop=True)
     resultado.attrs['eventos_sha256_por_emissor'] = hashes
+    resultado.attrs['trocas_ticker'] = trocas
     resultado.attrs['as_of'] = corte.date().isoformat()
     return resultado
 

@@ -1,0 +1,39 @@
+{
+  "id": "TRIO_ROIC_PIT_V3_2026-10-03",
+  "status": "tecnicamente_validada_para_treino",
+  "data_validacao": "2026-10-03",
+  "substitui": "TRIO_ROIC_PIT_V2_2026-09-28",
+  "fonte_sinal": [
+    "B3 COTAHIST",
+    "B3 CompanyCall",
+    "B3 ShareCapitalCall",
+    "CVM ITR/DFP/FCA"
+  ],
+  "gabarito_historico_exclusivo": "Fintz",
+  "formulas": {
+    "ROIC": "(EBIT TTM + IR/CSLL TTM da DRE 3.08) / (patrimonio liquido + divida bruta)",
+    "EV_EBIT": "(acoes ON*preco ON + acoes PN*preco PN + divida bruta - caixa) / EBIT TTM",
+    "momento_12_meses": "retorno total 252 sessoes; desdobramentos e caixa B3; JCP liquido de 15%"
+  },
+  "reconciliacao_top_2026-09-25": {
+    "EV_EBIT": "10/10 pares historicos com erro ate 0,074%",
+    "EBIT": "9/10 pares disponiveis com erro ate 0,074%; UGPA3 sem linha historica",
+    "ROIC": "8/10 pares comparaveis com erro ate 1,73 ponto percentual; MLAS3 historico invalido e UGPA3 sem par",
+    "momentum": "7/10 pares ate 0,04 ponto percentual; SEER3, WIZC3 e UGPA3 diferem porque o painel Fintz local nao ajustou dividendos B3 aprovados"
+  },
+  "limite": "validacao metodologica para simulacao; nao atribui performance passada ao mandato mensal",
+  "universo": {
+    "exclui_setores_cvm": [
+      "Bancos"
+    ],
+    "motivo": "Para bancos a conta CVM 3.05 nao e EBIT; EV/EBIT e ROIC nao tem sentido. O backtest de referencia (Fintz) nao tinha bancos: a Fintz nao publica EV/EBIT para 43 dos 45 tickers do setor e o motor descarta quem nao tem os tres indicadores.",
+    "efeito_sinal_2026-09-25": "nenhuma das dez acoes muda; saem do painel BBAS3, BBDC3, BBDC4, BMEB4, BRSR6, PINE4, SANB3 e SANB4",
+    "setor_fonte": "cadastro atual da CVM (SETOR_ATIV), nao point-in-time",
+    "referencia": "EXPERIMENTO_FINANCEIRAS.md"
+  },
+  "roic_v3": {
+    "motivo": "Formula do gabarito Fintz usado no backtest. A v2 (aliquota efetiva) descartava 54 acoes liquidas com LAIR negativo ou credito fiscal.",
+    "reconciliacao": "2025-11-03: 281 comparaveis, mediana 0,00 p.p., 95,4% ate 5 p.p.; 2024-11-01: 270, mediana 0,00 p.p., 94,1% ate 5 p.p.",
+    "efeito_sinal_2026-10-02": "universo de 101 para 151 acoes; entram VTRU3, CSED3 e UGPA3, saem TEND3, MLAS3 e MILS3"
+  }
+}

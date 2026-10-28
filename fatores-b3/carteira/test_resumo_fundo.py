@@ -1,4 +1,4 @@
-"""Resumo do fundo fictício lido pelo painel do QuantHub."""
+"""Resumo do fundo fictício lido pelo painel."""
 
 import datetime as dt
 import json
@@ -63,3 +63,31 @@ def test_nav_calculado_resume_retorno_patrimonio_e_execucao(tmp_path):
     assert abs(s['equity'] - 10_450) < 1e-6 and s['contributed'] == 10_000
     assert resumo['decisions'][0]['executionDate'] == '2025-01-03'
     assert [p['date'] for p in resumo['series']] == ['2025-01-03', '2025-01-06', '2025-01-07']
+
+
+def test_resumo_traz_comentario_ranking_universo_e_posicoes(tmp_path, monkeypatch):
+    from carteira import resumo_fundo
+    tickers = _publicar(tmp_path)
+    registro = sorted(tmp_path.glob('agenda-????-??-*.json'))[0]
+    linhas = [{'ticker': t, 'sector': 'Setor', 'evEbit': 5.0, 'roic': 0.2, 'momentum': 0.3,
+               'rankEvEbit': i, 'rankRoic': i, 'rankMomentum': i, 'score': 3 * i,
+               'position': i, 'selected': i <= 10}
+              for i, t in enumerate(tickers + ['FILA3', 'FILA4', 'FILA5', 'FILA6', 'FILA7', 'FORA3'], 1)]
+    registro.with_name(f'{registro.stem}-universo.json').write_text(
+        json.dumps({'signalDate': '2025-01-02', 'assets': 10, 'eligible': len(linhas), 'rows': linhas}),
+        encoding='utf-8')
+    data = json.loads(registro.read_text(encoding='utf-8'))['data_decisao']
+    comentarios = tmp_path / 'comentarios.yaml'
+    comentarios.write_text(f'{data}: Primeira decisao.\n', encoding='utf-8')
+    monkeypatch.setattr(resumo_fundo, 'COMENTARIOS', comentarios)
+    cotacoes = _cotacoes(tickers, [(dt.date(2025, 1, 2), 10.0), (dt.date(2025, 1, 3), 10.0),
+                                   (dt.date(2025, 1, 6), 11.0)])
+    atualizar_fundo_mensal(tmp_path, as_of='2025-01-06', cotacoes=cotacoes, provedor_series=_series)
+
+    resumo = resumir_fundo(tmp_path)
+    decisao = resumo['decisions'][0]
+    assert decisao['comment'] == 'Primeira decisao.'
+    assert len(decisao['ranking']) == 15 and decisao['coverage']['eligibleCompanies'] == 16
+    assert len(resumo['universe']['rows']) == 16
+    assert len(resumo['holdings']) == 10
+    assert abs(sum(h['contribution'] for h in resumo['holdings']) - 0.10) < 1e-12

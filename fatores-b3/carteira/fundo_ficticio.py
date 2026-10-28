@@ -158,6 +158,17 @@ def simular_fundo_mensal(alvos: pd.DataFrame, precos: pd.DataFrame,
                        'ganho_ficticio': patrimonio - total_aportado})
     indice = pd.DataFrame(diario)
     indice['drawdown'] = indice['indice'] / indice['indice'].cummax() - 1
+    # Carteira em vigor na ultima sessao: retorno de cada acao desde o giro e
+    # quanto ela somou ao retorno do fundo no mesmo trecho (peso x retorno).
+    ultimo = sessoes[-1]
+    posicoes = pd.DataFrame([{
+        'ticker': ticker, 'data_giro': ultimo_giro, 'data': ultimo, 'peso_alvo': peso,
+        'retorno_desde_giro': preco(ultimo, ticker, 'preco_fechamento_ajustado') /
+        preco(ultimo_giro, ticker, 'preco_fechamento_ajustado') - 1}
+        for ticker, peso in sorted(pesos.items())])
+    posicoes['contribuicao_desde_giro'] = posicoes['peso_alvo'] * posicoes['retorno_desde_giro']
+    valores = posicoes['peso_alvo'] * (1 + posicoes['retorno_desde_giro'])
+    posicoes['peso_atual'] = valores / valores.sum()
     operacoes = pd.DataFrame(ordens)
     fechamento = operacoes.groupby('data_execucao')['financeiro_nocional'].sum()
     aportes = ag.loc[fechamento.index, 'aporte_ficticio']
@@ -171,5 +182,6 @@ def simular_fundo_mensal(alvos: pd.DataFrame, precos: pd.DataFrame,
     return {'indice': indice[['data', 'indice', 'drawdown']],
             'patrimonio': indice.drop(columns='drawdown'),
             'operacoes_nocionais': operacoes,
+            'posicoes': posicoes,
             'sha256_entradas': hashlib.sha256(evidencia).hexdigest(),
             'tipo': 'simulacao_nocional_total_return_sem_custos'}

@@ -130,6 +130,7 @@ def calcular_fundo_mensal(pasta_relatorios, as_of=None,
             'indice': fundo['indice'],
             'patrimonio': fundo['patrimonio'],
             'operacoes_nocionais': fundo['operacoes_nocionais'],
+            'posicoes': fundo['posicoes'],
             'sha256_entradas': fundo['sha256_entradas'],
             'eventos_sha256_por_intervalo': hashes_eventos,
             'tipo': fundo['tipo'],
@@ -167,7 +168,7 @@ def atualizar_fundo_mensal(pasta_relatorios, as_of=None,
                     'estado_anterior': resultado['status']}
     payloads = {}
     if resultado['status'] == 'nav_nocional_calculado':
-        for chave in ('indice', 'patrimonio', 'operacoes_nocionais'):
+        for chave in ('indice', 'patrimonio', 'operacoes_nocionais', 'posicoes'):
             payloads[chave] = resultado[chave].to_parquet(index=False)
         metadados['arquivos_sha256'] = {
             chave: hashlib.sha256(conteudo).hexdigest()

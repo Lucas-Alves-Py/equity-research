@@ -145,6 +145,9 @@ def _baixar_com_manifesto(url: str, destino: str, validade_segundos: int,
     tmp_meta = meta_path.with_suffix(meta_path.suffix + '.tmp')
     tmp_meta.write_text(json.dumps(meta_atual, ensure_ascii=False, indent=2), encoding='utf-8')
     os.replace(tmp_meta, meta_path)
+    if atual is not None:
+        from fontes.retencao import aposentar
+        aposentar(atual, arquivo_versao)
     return str(arquivo_versao)
 
 
@@ -197,7 +200,8 @@ def security_master(anos) -> pd.DataFrame:
     vm = pd.concat(partes, ignore_index=True)
     vm = vm[vm['Codigo_Negociacao'].notna()].copy()
     vm['ticker'] = vm['Codigo_Negociacao'].astype(str).str.strip().str.upper()
-    vm = vm[vm['ticker'].str.fullmatch(r'[A-Z]{4}\d{1,2}')]
+    # Prefixo pode ter dígito (B3SA3); o filtro antigo [A-Z]{4} descartava a B3.
+    vm = vm[vm['ticker'].str.fullmatch(r'[A-Z][A-Z0-9]{3}\d{1,2}')]
 
     d = vm.rename(columns={'CNPJ_Companhia': 'cnpj', 'Nome_Empresarial': 'nome',
                            'Data_Inicio_Negociacao': 'inicio',
@@ -454,8 +458,10 @@ def dre_trimestral(anos, codigo: str, nome: str,
     if 'dt_receb' in d.columns:
         cols.append('dt_receb')
     itr = d[d['doc'].eq('ITR')].copy()
+    # Janela de 3 meses que termina na data-base, em qualquer calendário
+    # fiscal (CAML3 fecha trimestres em maio, agosto, novembro e fevereiro).
     trimestre_publicado = itr[
-        itr['meses'].eq(3) & itr['ini'].dt.quarter.eq(itr['trimestre'])
+        itr['meses'].eq(3) & itr['fim'].eq(itr['dt_refer'])
     ].copy()
     trimestre_publicado[nome] = trimestre_publicado['valor']
     trimestre_publicado['origem'] = 'ITR-trimestre-publicado'
@@ -463,16 +469,15 @@ def dre_trimestral(anos, codigo: str, nome: str,
 
     # Acumulados só valem quando começam no primeiro trimestre fiscal. Uma
     # subtração sem Q anterior ficaria numericamente plausível e errada.
-    acumulado = itr[
-        itr['ini'].dt.month.eq(1) & itr['ini'].dt.day.eq(1) &
-        itr['ini'].dt.year.eq(itr['ano']) &
-        itr['meses'].isin([3, 6, 9])
-    ].copy()
+    # O exercício é identificado pelo início da janela, não pelo ano civil:
+    # SMTO3/JALL3 fecham em março e AGRO3 em junho.
+    acumulado = itr[itr['meses'].isin([3, 6, 9])].copy()
+    acumulado['q_fiscal'] = (acumulado['meses'] // 3).astype(int)
     derivados = []
     publicados = set(zip(trimestre_publicado['cnpj'],
                          trimestre_publicado['dt_refer']))
-    for (cnpj, ano), grupo in acumulado.groupby(['cnpj', 'ano']):
-        por_q = {int(linha['trimestre']): linha
+    for (cnpj, _), grupo in acumulado.groupby(['cnpj', 'ini']):
+        por_q = {int(linha['q_fiscal']): linha
                  for _, linha in grupo.iterrows()}
         for q in (1, 2, 3):
             atual = por_q.get(q)
@@ -491,9 +496,9 @@ def dre_trimestral(anos, codigo: str, nome: str,
             derivados.append(registro)
 
     dfp = d[d['doc'].eq('DFP') & d['meses'].eq(12)].copy()
-    itr9 = acumulado[acumulado['trimestre'].eq(3)].copy()
+    itr9 = acumulado[acumulado['q_fiscal'].eq(3)].copy()
     if not dfp.empty and not itr9.empty:
-        pares = dfp.merge(itr9, on=['cnpj', 'ano'], how='inner',
+        pares = dfp.merge(itr9, on=['cnpj', 'ini'], how='inner',
                           suffixes=('_dfp', '_itr'), validate='one_to_one')
         for _, linha in pares.iterrows():
             registro = {

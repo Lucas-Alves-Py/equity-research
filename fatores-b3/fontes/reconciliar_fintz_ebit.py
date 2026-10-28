@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 from fontes import cvm
+from fontes.fundamentos import _ttm_contiguo
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -32,12 +33,13 @@ def reconciliar(as_of: str, anos: list[int]) -> pd.DataFrame:
             f"{trimestres.loc[dup, ['cnpj','dt_refer','doc','versao']].head(10).to_dict('records')}"
         )
 
-    ttm = (trimestres.groupby('cnpj', sort=False)
-           .tail(4).groupby('cnpj', as_index=False)
-           .agg(ebit_ttm_cvm=('ebit', 'sum'), trimestres=('dt_refer', 'nunique'),
-                protocolo_mais_recente=('dt_receb', 'max'),
-                periodo_mais_recente=('dt_refer', 'max')))
-    ttm = ttm[ttm['trimestres'].eq(4)]
+    # Mesma regra do seletor: quatro trimestres consecutivos, sem lacuna. A
+    # soma dos quatro últimos disponíveis misturava janelas (SMTO3 em 2025).
+    ttm = (_ttm_contiguo(trimestres, 'ebit', corte)
+           .rename(columns={'ebit_ttm': 'ebit_ttm_cvm',
+                            'dt_receb': 'protocolo_mais_recente',
+                            'dt_refer': 'periodo_mais_recente'})
+           .assign(trimestres=4))
 
     cadastro = cvm.security_master(anos)
     inicio_ok = cadastro['inicio'].isna() | cadastro['inicio'].le(corte)

@@ -1,4 +1,4 @@
-"""Resumo do fundo fictício mensal para o painel do QuantHub.
+"""Resumo do fundo fictício mensal para o painel.
 
 Lê as decisões da agenda e o snapshot mais recente gravado por
 `execucao_mensal`; não recalcula NAV. O JSON resultante é servido pela rota
@@ -12,12 +12,33 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 from carteira.agenda import mandato_mensal
+
+# Comentário do gestor sobre cada decisão, escrito à mão (chave: data da decisão).
+COMENTARIOS = Path(__file__).resolve().parent / 'comentarios_decisoes.yaml'
 
 
 def _ler(caminho: Path) -> dict:
     return json.loads(caminho.read_text(encoding='utf-8'))
+
+
+def _comentarios() -> dict:
+    if not COMENTARIOS.exists():
+        return {}
+    return {str(k): str(v).strip() for k, v in
+            (yaml.safe_load(COMENTARIOS.read_text(encoding='utf-8')) or {}).items()}
+
+
+def _cobertura(r: dict) -> dict:
+    c = r.get('cobertura') or {}
+    return {'liquidMapped': c.get('liquidos_mapeados'), 'withCvmData': c.get('base_cvm_liquida'),
+            'validLiquid': c.get('validos_liquidos'),
+            'withoutRoic': c.get('sem_roic'), 'ebitZeroOrMissing': c.get('ebit_zero_ou_ausente'),
+            'withoutCapital': c.get('sem_capital'), 'withoutEvents': c.get('sem_eventos'),
+            'excludedBySector': len(r.get('excluidos_por_setor') or []),
+            'capitalQuarantine': len(r.get('quarentena_capital') or [])}
 
 
 def _decisoes(pasta: Path) -> list[dict]:
@@ -30,6 +51,7 @@ def _decisoes(pasta: Path) -> list[dict]:
         valida = r.get('status') == 'selecao_tecnica_validada_para_treino'
         if valida or not por_mes.get(mes, {}).get('valida'):
             por_mes[mes] = {'valida': valida, 'caminho': caminho, 'r': r}
+    comentarios = _comentarios()
     decisoes = []
     for mes in sorted(por_mes):
         caminho, r = por_mes[mes]['caminho'], por_mes[mes]['r']
@@ -38,12 +60,20 @@ def _decisoes(pasta: Path) -> list[dict]:
         if alvo.exists():
             posicoes = [{'ticker': t, 'weight': float(p)} for t, p in
                         pd.read_csv(alvo)[['ticker', 'peso']].itertuples(index=False)]
+        universo = caminho.with_name(caminho.stem + '-universo.json')
+        u = _ler(universo) if universo.exists() else None
         decisoes.append({'decisionDate': r.get('data_decisao'),
                          'signalDate': r.get('data_sinal'),
                          'status': r.get('status'),
                          'error': r.get('erro'),
                          'executionDate': None,
-                         'positions': posicoes})
+                         'positions': posicoes,
+                         'comment': comentarios.get(str(r.get('data_decisao'))),
+                         'coverage': {**_cobertura(r),
+                                      'eligibleCompanies': u['eligible'] if u else None},
+                         # As dez escolhidas e as cinco seguintes da fila.
+                         'ranking': u['rows'][:u['assets'] + 5] if u else [],
+                         '_universo': u})
     return decisoes
 
 
@@ -51,6 +81,9 @@ def resumir_fundo(pasta_relatorios) -> dict:
     pasta = Path(pasta_relatorios)
     regra = mandato_mensal()
     decisoes = _decisoes(pasta)
+    universos = [d.pop('_universo') for d in decisoes]
+    # Só o universo da decisão mais recente vai inteiro para o painel.
+    universo = next((u for u in reversed(universos) if u), None)
     snapshots = sorted(pasta.glob('fundo-*.json'))
     ultimo = _ler(snapshots[-1]) if snapshots else {}
     calculados = [c for c in snapshots
@@ -64,13 +97,22 @@ def resumir_fundo(pasta_relatorios) -> dict:
               'error': ultimo.get('erro'),
               'calculatedAt': ultimo.get('calculado_em'),
               'lastSession': ultimo.get('ultima_sessao_b3'),
-              'summary': None, 'series': [], 'decisions': decisoes}
+              'summary': None, 'series': [], 'decisions': decisoes,
+              'universe': universo, 'holdings': []}
     if not calculados:
         return resumo
     base = calculados[-1].with_suffix('')
     patrimonio = pd.read_parquet(f'{base}-patrimonio.parquet')
     indice = pd.read_parquet(f'{base}-indice.parquet')
     operacoes = pd.read_parquet(f'{base}-operacoes_nocionais.parquet')
+    # Snapshots anteriores a esta versão não gravavam as posições.
+    if Path(f'{base}-posicoes.parquet').exists():
+        posicoes = pd.read_parquet(f'{base}-posicoes.parquet')
+        resumo['holdings'] = [{'ticker': r.ticker, 'since': str(r.data_giro), 'asOf': str(r.data),
+                               'targetWeight': float(r.peso_alvo), 'currentWeight': float(r.peso_atual),
+                               'return': float(r.retorno_desde_giro),
+                               'contribution': float(r.contribuicao_desde_giro)}
+                              for r in posicoes.itertuples(index=False)]
     execucao = {str(d): str(e) for d, e in operacoes[
         ['data_decisao', 'data_execucao']].drop_duplicates().itertuples(index=False)}
     for decisao in decisoes:

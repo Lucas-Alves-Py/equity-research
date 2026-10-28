@@ -68,3 +68,19 @@ def test_sem_d1_nao_inventa_aporte():
     agenda['data_execucao'] = None
     with pytest.raises(ValueError, match='nenhuma execucao D\\+1 observada'):
         simular_fundo_mensal(alvos, precos, agenda)
+
+
+def test_posicoes_somam_o_retorno_desde_o_ultimo_giro():
+    alvos, precos, agenda = _entradas()
+    # Depois do giro de 06/11, o primeiro ativo sobe 10% e os demais ficam parados.
+    dia = pd.DataFrame([{'data': '2026-11-07', 'ticker': t,
+                         'preco_bruto': 13.2 if t == TICKERS[0] else 12.0,
+                         'preco_fechamento_ajustado': 13.2 if t == TICKERS[0] else 12.0}
+                        for t in TICKERS])
+    resultado = simular_fundo_mensal(alvos, pd.concat([precos, dia], ignore_index=True), agenda)
+    posicoes = resultado['posicoes'].set_index('ticker')
+    assert posicoes.loc[TICKERS[0], 'retorno_desde_giro'] == pytest.approx(0.10)
+    assert posicoes.loc[TICKERS[0], 'contribuicao_desde_giro'] == pytest.approx(0.01)
+    assert posicoes['peso_atual'].sum() == pytest.approx(1)
+    nav = resultado['indice']['indice']
+    assert posicoes['contribuicao_desde_giro'].sum() == pytest.approx(nav.iat[-1] / nav.iat[-2] - 1)

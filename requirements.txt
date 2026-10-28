@@ -1,7 +1,14 @@
-numpy==2.4.3
-pandas==3.0.1
-pyarrow==23.0.1
+# Versoes com que os resultados publicados foram gerados (Python 3.12).
+numpy==1.26.4
+pandas==2.2.3
+pyarrow==17.0.0
 PyYAML==6.0.3
+requests==2.32.3
+python-dateutil==2.9.0.post0
+scipy==1.14.1
+statsmodels==0.14.4
+matplotlib==3.9.2
+seaborn==0.13.2
+fpdf==1.7.2
 openpyxl==3.1.5
-requests==2.33.0
-pytest==9.0.2
+pytest==9.1.1

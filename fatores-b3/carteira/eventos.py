@@ -56,6 +56,7 @@ def _desvio_do_inteiro(razao):
     de virar uma flag binaria: quanto menor, mais parece evento societario;
     quanto maior, mais parece movimento real de preco.
     """
+    razao = np.asarray(razao, dtype=float)  # array de objetos quebrava np.round
     with np.errstate(divide='ignore', invalid='ignore'):
         x = np.where(razao > 1, razao, np.divide(1.0, razao))
     alvo = np.round(x)

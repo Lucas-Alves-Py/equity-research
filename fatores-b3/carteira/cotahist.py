@@ -27,7 +27,7 @@ Layout do registro tipo 01 (posicoes 1-based, inclusivas)
 ---------------------------------------------------------
  01-02  TIPREG   tipo de registro ('01' = cotacao)
  03-10  DATA     AAAAMMDD
- 11-12  CODBDI   '02' = lote padrao
+ 11-12  CODBDI   '02' = lote padrao; '07'/'08' = recuperacao extrajudicial/judicial
  13-24  CODNEG   ticker
  25-27  TPMERC   '010' = mercado a vista
  57-69  PREABE   abertura      (2 decimais implicitos)
@@ -56,6 +56,12 @@ import requests
 AQUI = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(AQUI, 'ledger')
 URL = "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{ano}.ZIP"
+
+# Lote padrão e ações em recuperação extrajudicial (07) ou judicial (08). A B3
+# muda o CODBDI quando a empresa pede recuperação: filtrar só '02' cortava a
+# série no pedido (uma posição aberta ficaria congelada no último preço) e
+# tirava do universo empresas que o backtest Fintz tinha (ETER3, FHER3).
+CODBDI_ACOES = ('02', '07', '08')
 
 # nome -> (inicio 0-based, fim exclusivo, divisor)
 CAMPOS = {
@@ -160,6 +166,9 @@ def baixar(ano, destino=None, atualizar=False):
     tmp_meta = meta_path.with_suffix(meta_path.suffix + '.tmp')
     tmp_meta.write_text(json.dumps(manifesto, ensure_ascii=False, indent=2), encoding='utf-8')
     os.replace(tmp_meta, meta_path)
+    if atual is not None:
+        from fontes.retencao import aposentar
+        aposentar(atual, arquivo_versao)
     return str(arquivo_versao)
 
 
@@ -176,8 +185,8 @@ def parsear(caminho, apenas_vista=True):
             continue                                    # header/trailer
         if apenas_vista and linha[24:27] != '010':
             continue                                    # so mercado a vista
-        if linha[10:12] != '02':
-            continue                                    # so lote padrao
+        if linha[10:12] not in CODBDI_ACOES:
+            continue                                    # lote padrao e recuperacao
         linhas.append(linha)
 
     dados = {}
@@ -217,7 +226,7 @@ def parsear_periodo(caminho, data_inicio, data_fim):
                 if len(bruto) < 245 or bruto[:2] != b'01':
                     continue
                 data = bruto[2:10].decode('ascii')
-                if not (inicio <= data <= fim) or bruto[10:12] != b'02' or bruto[24:27] != b'010':
+                if not (inicio <= data <= fim) or bruto[10:12].decode() not in CODBDI_ACOES or bruto[24:27] != b'010':
                     continue
                 fator = int(bruto[210:217]) or 1
                 linhas.append((pd.Timestamp(data), bruto[12:24].decode('latin-1').strip(),

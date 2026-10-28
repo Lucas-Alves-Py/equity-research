@@ -133,3 +133,72 @@ def test_series_diarias_bloqueiam_evento_aprovado_apos_corte():
         series_ajustadas(['DIRR3'], datas[0], datas[-1], datas[-1], cotacoes=cot,
                          eventos_por_emissor={'DIRR': ({'issuingCompany': 'DIRR'}, caixa, acoes)},
                          guardar_snapshots=False)
+
+
+def _serie(ticker, inicio, n, preco):
+    datas = pd.bdate_range(inicio, periods=n)
+    return pd.DataFrame({'data': datas, 'ticker': ticker, 'fechamento': preco,
+                         'volume_negociado': 1_000_000.0})
+
+
+def test_troca_de_ticker_emenda_historico_so_com_mesmo_cnpj_e_preco_continuo():
+    from carteira.painel_precos import encadear_trocas
+    # EMBR3 -> EMBJ3 (mesma empresa); PETZ3 -> AUAU3 (holding nova, outro
+    # CNPJ); XPTO3 -> XPTJ3 mesmo CNPJ, mas preco salta 10x.
+    datas = pd.bdate_range('2025-01-01', periods=300)
+    corte = datas[200]
+    partes = []
+    for velho, novo, p_velho, p_novo in [('EMBR3', 'EMBJ3', 50.0, 51.0),
+                                         ('PETZ3', 'AUAU3', 5.0, 5.1),
+                                         ('XPTO3', 'XPTJ3', 10.0, 1.0)]:
+        partes.append(_serie(velho, datas[0], 200, p_velho))
+        partes.append(_serie(novo, corte, 100, p_novo))
+    bruto = pd.concat(partes, ignore_index=True)
+    cnpj = {'EMBR3': {'embraer'}, 'EMBJ3': {'embraer'}, 'PETZ3': {'petz'},
+            'AUAU3': {'auau'}, 'XPTO3': {'x'}, 'XPTJ3': {'x'}}
+
+    novo, trocas = encadear_trocas(bruto, lambda t: cnpj[t])
+
+    assert [t['novo'] for t in trocas] == ['EMBJ3']
+    assert (novo['ticker'] == 'EMBJ3').sum() == 300
+    assert (novo['ticker'] == 'AUAU3').sum() == 100
+    assert (novo['ticker'] == 'XPTJ3').sum() == 100
+
+
+def test_snapshot_de_eventos_igual_nao_duplica(monkeypatch, tmp_path):
+    # Com hora de captura e data da rodada no hash, cada rodada diaria gravava
+    # um arquivo novo por empresa (2.240 em um dia de testes).
+    import carteira.painel_precos as modulo
+    monkeypatch.setattr(modulo, 'EVENTOS_SNAPSHOTS', tmp_path)
+    captura = _eventos(pd.Timestamp('2025-01-01'))
+    a = modulo._guardar_eventos('DIRR', captura, pd.Timestamp('2026-10-02'))
+    b = modulo._guardar_eventos('DIRR', captura, pd.Timestamp('2026-10-05'))
+    assert a == b and len(list(tmp_path.glob('*.json'))) == 1
+
+
+def test_troca_de_ticker_em_ordem_alfabetica_inversa_mantem_janela_por_data():
+    # ELET3 -> AXIA3: o código antigo vem depois do novo na ordem por ticker.
+    # Sem reordenar, tail(253) pegava linhas fora de ordem e o momentum da
+    # AXIA3 saiu 94% em vez de 49% no painel de 07/10/2026.
+    datas = pd.bdate_range('2025-01-01', periods=300)
+    preco = [50 + 0.1 * i for i in range(300)]
+    cot = pd.DataFrame({'data': datas,
+                        'ticker': ['ELET3'] * 200 + ['AXIA3'] * 100,
+                        'fechamento': preco, 'volume_negociado': 1_000_000.0})
+    vazio = (pd.DataFrame(columns=['ultimo_com', 'aprovado_em', 'classe', 'tipo',
+                                   'valor', 'preco_anterior', 'pct']),
+             pd.DataFrame(columns=['ultimo_com', 'aprovado_em', 'isin', 'tipo', 'fator_b3']))
+    painel = painel_precos(datas[-1], cotacoes=cot,
+                           eventos_por_emissor={'AXIA': ({'issuingCompany': 'AXIA'}, *vazio)},
+                           guardar_snapshots=False, cnpj_de=lambda t: {'eletrobras'})
+    assert painel['ticker'].tolist() == ['AXIA3']
+    assert abs(painel.iloc[0]['momento_12_meses'] - (preco[-1] / preco[-253] - 1)) < 1e-12
+
+
+def test_desvio_do_inteiro_aceita_razoes_em_array_de_objetos():
+    # Em 23/05/2025 a razão chegou como array de objetos e np.round quebrava
+    # a montagem do painel inteiro.
+    import numpy as np
+    from carteira.eventos import _desvio_do_inteiro
+    d = _desvio_do_inteiro(np.array([2.0, 0.5, 1.0], dtype=object))
+    assert d[0] == 0.0 and d[1] == 0.0 and np.isnan(d[2])

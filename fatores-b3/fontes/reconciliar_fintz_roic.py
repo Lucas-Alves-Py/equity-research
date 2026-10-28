@@ -49,10 +49,12 @@ def reconciliar(as_of: str, anos: list[int]) -> pd.DataFrame:
                 z.loc[~z['lair_ttm'].gt(0) |
                       ~z['aliquota_efetiva'].between(0, 1), nome] = float('nan')
             z[f'erro_pp_{nome_taxa}_{nome_den}'] = (z[nome] - z['roic_fintz']).abs() * 100
-    z['quarentena_roic'] = (z['erro_pp_efetivo_bruto_atual'].isna() |
-                             z['erro_pp_efetivo_bruto_atual'].gt(5))
+    # ROIC que o seletor usa (v3); as variantes acima ficam como diagnóstico.
+    z['erro_pp_pipeline'] = (z['ROIC'] - z['roic_fintz']).abs() * 100
+    z['quarentena_roic'] = (z['erro_pp_pipeline'].isna() |
+                             z['erro_pp_pipeline'].gt(5))
     z['as_of'] = corte
-    return z.sort_values('erro_pp_efetivo_bruto_atual', ascending=False,
+    return z.sort_values('erro_pp_pipeline', ascending=False,
                          na_position='last').reset_index(drop=True)
 
 

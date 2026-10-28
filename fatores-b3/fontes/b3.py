@@ -46,7 +46,7 @@ BASE = "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCal
 CABECALHO = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
 
 # classe da acao pelo sufixo do ticker
-CLASSE = {'3': 'ON', '4': 'PN', '5': 'PN', '6': 'PN', '11': 'UNT'}
+CLASSE = {'3': 'ON', '4': 'PN', '5': 'PNA', '6': 'PNB', '11': 'UNT'}
 
 
 def _chamar(rota: str, params: dict, timeout: int = 60):
@@ -81,11 +81,15 @@ def empresa(ticker: str) -> dict | None:
 def proventos(trading_name: str, pausa: float = 0.3) -> pd.DataFrame:
     """Historico completo de provento em dinheiro, paginado."""
 
+    # Com barra ("AMBEV S/A", "CURY S/A", "KLABIN S/A") a B3 devolve zero
+    # proventos sem erro, e o momentum ignorava os dividendos. Sem a barra a
+    # consulta retorna o histórico completo (KLABIN: 213 eventos).
+    nome_consulta = trading_name.replace('/', '')
     linhas, pagina = [], 1
     while True:
         d = _chamar("GetListedCashDividends",
                     {"language": "pt-br", "pageNumber": pagina,
-                     "pageSize": 99, "tradingName": trading_name})
+                     "pageSize": 99, "tradingName": nome_consulta})
         if not isinstance(d, dict) or not isinstance(d.get('results'), list):
             raise RuntimeError(f'resposta inesperada de proventos B3: {trading_name}')
         linhas += d.get('results', [])
@@ -161,7 +165,9 @@ def proventos_ativos(ticker: str, empresa_b3: dict | None = None,
         raise ValueError(f"ticker sem cadastro na B3: {ticker}")
     saida = eventos_empresa.copy() if eventos_empresa is not None else eventos_ativos_empresa(empresa_b3)
 
-    classe_isin = {'3': 'NOR', '4': 'NPR', '5': 'NPA', '6': 'NPB'}.get(ticker[-1:])
+    # Unit (KLBN11, TAEE11): ISIN de certificado de depósito, ex. BRKLBNCDAM18.
+    classe_isin = ({'11': 'CDA'}.get(ticker[4:]) or
+                   {'3': 'NOR', '4': 'NPR', '5': 'NPA', '6': 'NPB'}.get(ticker[-1:]))
     if not classe_isin and not saida.empty:
         raise ValueError(f'classe de evento em ações não mapeada: {ticker}')
     if classe_isin:
